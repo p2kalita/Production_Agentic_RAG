@@ -3,6 +3,7 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+
 from src.config import get_settings
 from src.db.factory import make_database
 
