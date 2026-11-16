@@ -5,6 +5,7 @@ from fastapi import Depends, Request
 
 # Week 1: Removed API key authentication for simplicity
 from sqlalchemy.orm import Session
+
 from src.config import Settings
 from src.db.interfaces.base import BaseDatabase
 
