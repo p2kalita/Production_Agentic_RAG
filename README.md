@@ -1,246 +1,169 @@
-# The Mother of AI Project
-## Phase 1 RAG Systems: arXiv Paper Curator
+# Week 2: arXiv API Integration & PDF Processing
 
-<div align="center">
-  <h3>A Learner-Focused Journey into Production RAG Systems</h3>
-  <p>Learn to build modern AI systems from the ground up through hands-on implementation</p>
-  <p>Master the most in-demand AI engineering skills: <strong>RAG (Retrieval-Augmented Generation)</strong></p>
-</div>
+This folder contains the materials for Week 2 of the arXiv Paper Curator project, which focuses on building the core data ingestion pipeline that feeds fresh academic content into our RAG system.
+
+## Contents
+
+### `week2_arxiv_integration.ipynb`
+A comprehensive Jupyter notebook that guides students through:
+
+1. **Infrastructure Validation**
+   - Verify all Week 1 services are running correctly
+   - Container health checks and fresh build verification
+   - Environment setup for Week 2 components
+
+2. **arXiv API Integration**
+   - Building a robust client with rate limiting and retry logic
+   - Implementing date-based filtering for targeted paper retrieval
+   - Testing CS.AI category searches with proper API etiquette
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.12+-blue.svg" alt="Python Version">
-  <img src="https://img.shields.io/badge/FastAPI-0.115+-green.svg" alt="FastAPI">
-  <img src="https://img.shields.io/badge/OpenSearch-2.19-orange.svg" alt="OpenSearch">
-  <img src="https://img.shields.io/badge/Docker-Compose-blue.svg" alt="Docker">
-  <img src="https://img.shields.io/badge/Status-Week%201%20Ready-brightgreen.svg" alt="Status">
+  <img src="../../static/week2_data_ingestion_flow.png" alt="Week 2 Data Ingestion Architecture" width="800">
 </p>
 
-</br>
+**Data Pipeline Overview:**
+- **MetadataFetcher**: 🎯 Main orchestrator coordinating the entire pipeline
+- **ArxivClient**: Rate-limited fetching with retry logic (3-second delays)
+- **PDFParserService**: Scientific PDF parsing with structured content extraction
+- **PaperRepository**: PostgreSQL integration with upsert operations
+- **Airflow DAGs**: Automated daily ingestion workflows
 
-<p align="center">
-  <a href="#-about-this-course">
-    <img src="static/mother_of_ai_project_rag_architecture.gif" alt="RAG Architecture" width="700">
-  </a>
-</p>
+3. **PDF Processing Pipeline**
+   - Download and cache PDF files with proper error handling
+   - Parse scientific PDFs using Docling for structured content extraction
+   - Handle parsing failures gracefully with fallback mechanisms
 
-## 📖 About This Course
+4. **Database Integration**
+   - Store paper metadata and content in PostgreSQL
+   - Implement upsert logic to avoid duplicates
+   - Test retrieval and query operations
 
-This is a **learner-focused project** where you'll build a complete research assistant system that automatically fetches academic papers, understands their content, and answers your research questions using advanced RAG techniques.
+5. **Complete Pipeline Testing**
+   - End-to-end processing from arXiv API to database storage
+   - Error handling and graceful degradation testing
+   - Performance metrics and success rate analysis
 
-**The arXiv Paper Curator** will teach you to build a **production-grade RAG system using industry best practices**. You'll master the architecture, implementation, and deployment of AI systems that professionals use in the real world.
+6. **Production Readiness**
+   - Airflow DAG status verification
+   - Error logging and monitoring capabilities
+   - Ready for automated daily ingestion
 
-By the end of this course, you'll have your own AI research assistant and the skills to build similar systems for any domain.
+## Learning Objectives
 
----
+By completing this week's materials, students will:
 
-## 🚀 Quick Start
+- Master API integration with proper rate limiting and error handling
+- Learn PDF processing techniques for scientific documents
+- Understand database design patterns for research data storage
+- Build robust data pipelines with comprehensive error handling
+- Gain experience with async Python programming patterns
+- Learn workflow automation concepts with Apache Airflow
+- Develop skills in production-grade data processing systems
 
-### **📋 Prerequisites**
-- **Docker Desktop** (with Docker Compose)  
-- **Python 3.12+**
-- **UV Package Manager** ([Install Guide](https://docs.astral.sh/uv/getting-started/installation/))
-- **8GB+ RAM** and **20GB+ free disk space**
+## Key Technologies & Services
 
-### **⚡ Get Started**
+### Core Services (Built This Week)
+- **arXiv API Client** - Fetches CS.AI papers with intelligent rate limiting
+- **PDF Parser (Docling)** - Extracts structured content from scientific PDFs
+- **Metadata Fetcher** - Orchestrates the complete processing pipeline
+- **Database Repository** - Handles PostgreSQL operations with SQLAlchemy
+
+### Infrastructure Dependencies (From Week 1)
+- **PostgreSQL 16** - Paper metadata and content storage
+- **FastAPI** - REST API endpoints for paper retrieval
+- **Apache Airflow** - Workflow orchestration and scheduling
+- **Docker Compose** - Service orchestration and networking
+
+## Pipeline Architecture
+
+```
+arXiv Search Query → Rate Limited API Calls → PDF Downloads → Docling Parsing → Database Storage
+        ↓                    ↓                    ↓              ↓               ↓
+   Date Filtering    →  Retry Logic       →   Caching      → Structure    →  Upsert Logic
+   Category Filter   →  Error Handling    →   Validation   → Extraction   →  Transactions
+   Result Limiting   →  3s Rate Limit     →   Size Checks  → Metadata     →  Relationships
+```
+
+## Performance Characteristics
+
+**Week 2 System Capabilities:**
+- **arXiv API**: ~20 papers/minute (respecting 3-second rate limits)
+- **PDF Processing**: 2-5 seconds per paper (depends on PDF complexity)
+- **Database Storage**: ~100 papers/second (batch operations)
+- **Error Handling**: Graceful continuation despite individual failures
+- **Success Rates**: 95%+ for paper fetching, 80-90% for PDF parsing
+
+## Target Audience
+
+This material is designed for:
+- **Data Engineers** learning research data pipeline construction
+- **Students** interested in academic research automation
+- **Developers** building content aggregation systems
+- **Researchers** wanting to automate literature discovery
+- **Anyone** building production data ingestion pipelines
+
+## Time Commitment
+
+- **Fresh container build**: 10-15 minutes (required for Week 2 dependencies)
+- **Notebook completion**: 45-60 minutes
+- **Pipeline testing**: 30-45 minutes
+- **Total**: 1.5-2 hours
+
+## 📖 Additional Resources
+
+**Week 2 Blog Post:** [Building Robust Data Pipelines for Academic Research](https://jamwithai.substack.com/p/building-data-pipelines-academic-research)
+- Deep dive into arXiv API best practices
+- PDF processing strategies for scientific documents
+- Error handling patterns for production systems
+- Database design for research metadata
+
+## Important Notes
+
+### Fresh Container Build Required
+Week 2 requires rebuilding containers with new dependencies:
 
 ```bash
-# 1. Clone and setup
-git clone <repository-url>
-cd zero_to_RAG
-uv sync
+# Shutdown and rebuild (REQUIRED for Week 2)
+docker compose down
+docker compose up --build
 
-# 2. Start all services
-docker compose up --build -d
-
-# 3. Verify everything works
-curl http://localhost:8000/health
+# This ensures:
+# - New Python dependencies (docling, arxiv client)
+# - Updated Airflow DAGs
+# - Fresh service configurations
 ```
 
-### **📊 Access Your Services**
+### PDF Processing Expectations
+- Not all PDFs parse successfully (expected behavior)
+- Docling works best with standard academic paper formats
+- System handles failures gracefully and continues processing
+- Success rates of 80-90% are normal for academic PDFs
 
-| Service | URL | Purpose |
-|---------|-----|---------|
-| **API Documentation** | http://localhost:8000/docs | Interactive API testing |
-| **Airflow Dashboard** | http://localhost:8080 | Workflow management |
-| **OpenSearch Dashboards** | http://localhost:5601 | Hybrid search engine UI |
+## Support Resources
 
-#### **NOTE**: Check airflow/simple_auth_manager_passwords.json.generated for Airflow username and password
----
+If you encounter issues:
+1. Ensure fresh containers are built (`docker compose up --build`)
+2. Check the troubleshooting sections in the notebook
+3. Review service health checks and logs
+4. Verify all Week 1 infrastructure is working
+5. Ask in Jam With AI substack chat channel
 
-## 📚 Learning Materials
+## Next Steps
 
-### **📓 Week 1: Complete Setup Guide**
-**Start here!** Follow our comprehensive setup notebook:
-Please run it in terminal
+After completing Week 2, you will be ready to:
+- Understand production data pipeline architecture
+- Handle real-world API integration challenges
+- Implement robust error handling and monitoring
+- Proceed to Week 3: OpenSearch Integration and Full-Text Search
+- Build confidence in handling complex data processing workflows
 
-```bash
-# Launch the Week 1 notebook
-uv run jupyter notebook notebooks/week1/week1_setup.ipynb
-```
+## Success Criteria
 
-**What you'll learn in Week 1:**
-- Complete infrastructure setup with Docker Compose
-- FastAPI development with automatic documentation and health checks
-- PostgreSQL database configuration and management
-- OpenSearch hybrid search engine setup
-- Ollama local LLM service configuration
-- Service orchestration and health monitoring
-- Professional development environment with code quality tools
-
-### **📖 Week 1 Blog Post**
-*Coming soon!* Detailed walkthrough and production insights.
-
----
-
-## 🛠️ Technology Stack
-
-| Service | Purpose | Status |
-|---------|---------|--------|
-| **FastAPI** | REST API with automatic docs | ✅ Ready |
-| **PostgreSQL 16** | Paper metadata and content storage | ✅ Ready |
-| **OpenSearch 2.19** | Hybrid search engine | ✅ Ready |
-| **Apache Airflow 3.0** | Workflow automation | ✅ Ready |
-| **Ollama** | Local LLM serving | ✅ Ready |
-
-**Development Tools:** UV, Ruff, MyPy, Pytest, Docker Compose
-
----
-
-## 🎯 What You're Building
-
-### **Week 1: Infrastructure Foundation** ✅
-- Multi-service architecture using Docker Compose
-- REST API with health monitoring and documentation
-- Database setup with proper schema design
-- Search engine configuration for future RAG features
-- Professional development environment
-
-### **Future Weeks: Complete RAG System** (6-Week Course)
-- **Week 2:** arXiv API integration, PDF parsing with Docling, automated data ingestion
-- **Week 3:** OpenSearch hybrid search implementation with BM25 + semantic vectors
-- **Week 4:** Context-aware chunking and retrieval evaluation with nDCG metrics
-- **Week 5:** Full RAG pipeline with LLM integration and prompt optimization
-- **Week 6:** Observability with Langfuse, A/B testing, and production deployment
-
----
-
-## 🏗️ Project Structure (Week 1)
-
-```
-zero_to_RAG/
-├── src/                        # Main application code
-│   ├── main.py                # FastAPI application
-│   ├── routers/               # API endpoints
-│   ├── models/                # Database models (SQLAlchemy)
-│   ├── repositories/          # Data access layer
-│   ├── schemas/               # Pydantic validation schemas
-│   ├── services/              # Business logic
-│   ├── db/                    # Database configuration
-│   ├── config.py              # Environment configuration
-│   └── dependencies.py        # Dependency injection
-│
-├── notebooks/week1/           # Learning materials
-│   └── week1_setup.ipynb      # Complete setup guide
-│
-├── tests/                     # Comprehensive test suite
-├── airflow/dags/              # Workflow definitions
-├── static/                    # Assets (images, GIFs)
-└── compose.yml                # Service orchestration
-```
-
----
-
-## 🔧 Essential Commands
-
-### **Using the Makefile** (Recommended)
-```bash
-# View all available commands
-make help
-
-# Quick workflow
-make start         # Start all services
-make health        # Check all services health
-make test          # Run tests
-make stop          # Stop services
-```
-
-### **All Available Commands**
-| Command | Description |
-|---------|-------------|
-| `make start` | Start all services |
-| `make stop` | Stop all services |
-| `make restart` | Restart all services |
-| `make status` | Show service status |
-| `make logs` | Show service logs |
-| `make health` | Check all services health |
-| `make setup` | Install Python dependencies |
-| `make format` | Format code |
-| `make lint` | Lint and type check |
-| `make test` | Run tests |
-| `make test-cov` | Run tests with coverage |
-| `make clean` | Clean up everything |
-
-### **Direct Commands** (Alternative)
-```bash
-# If you prefer using commands directly
-docker compose up --build -d    # Start services
-docker compose ps               # Check status
-docker compose logs            # View logs
-uv run pytest                 # Run tests
-```
-
----
-
-## 🎓 Learning Path
-
-### **Week 1 Success Criteria**
-Complete when you can:
-- [ ] Start all services with `docker compose up -d`
-- [ ] Access API docs at http://localhost:8000/docs  
-- [ ] Login to Airflow at http://localhost:8080
-- [ ] Browse OpenSearch at http://localhost:5601
-- [ ] All tests pass: `uv run pytest`
-
-### **Target Audience**
-| Who | Why |
-|-----|-----|
-| **AI/ML Engineers** | Learn production RAG architecture beyond tutorials |
-| **Software Engineers** | Build end-to-end AI applications with best practices |
-| **Data Scientists** | Implement production AI systems using modern tools |
-
----
-
-## 🛠️ Troubleshooting
-
-**Common Issues:**
-- **Services not starting?** Wait 2-3 minutes, check `docker compose logs`
-- **Port conflicts?** Stop other services using ports 8000, 8080, 5432, 9200
-- **Memory issues?** Increase Docker Desktop memory allocation
-
-**Get Help:**
-- Check the comprehensive Week 1 notebook troubleshooting section
-- Review service logs: `docker compose logs [service-name]`
-- Complete reset: `docker compose down --volumes && docker compose up --build -d`
-
----
-
-## 💰 Cost Structure
-
-**This course is completely free!** You'll only need minimal costs for optional services:
-- **Local Development:** $0 (everything runs locally)
-- **Optional Cloud APIs:** ~$2-5 for external LLM services (if chosen)
-
----
-
-<div align="center">
-  <h3>🎉 Ready to Start Your AI Engineering Journey?</h3>
-  <p><strong>Begin with the Week 1 setup notebook and build your first production RAG system!</strong></p>
-  
-  <p><em>Built with ❤️ for learners who want to master modern AI engineering</em></p>
-</div>
-
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
+✅ **Week 2 Complete When:**
+- arXiv API client fetches papers with proper rate limiting
+- PDF download and caching works reliably
+- Docling parser extracts structured content from scientific papers
+- Database stores complete paper metadata with relationships
+- Complete pipeline processes papers end-to-end with error handling
+- Airflow DAGs are configured and ready for automation
+- All components demonstrate production-grade error handling and monitoring
