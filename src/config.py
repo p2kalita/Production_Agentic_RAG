@@ -19,36 +19,8 @@ class BaseConfigSettings(BaseSettings):
     )
 
 
-<<<<<<< Updated upstream
 class Settings(DefaultSettings):
     """Application settings."""
-=======
-class ArxivSettings(BaseConfigSettings):
-    model_config = SettingsConfigDict(
-        env_file=[".env", str(ENV_FILE_PATH)],
-        env_prefix="ARXIV__",
-        extra="ignore",
-        frozen=True,
-        case_sensitive=False,
-    )
-
-    base_url: str = "https://export.arxiv.org/api/query"
-    pdf_cache_dir: str = "./data/arxiv_pdfs"
-    rate_limit_delay: float = 3.0
-    timeout_seconds: int = 30
-    max_results: int = 15
-    search_category: str = "cs.AI"
-    download_max_retries: int = 3
-    download_retry_delay_base: float = 5.0
-    max_concurrent_downloads: int = 5
-    max_concurrent_parsing: int = 1
-
-    namespaces: dict = {
-        "atom": "http://www.w3.org/2005/Atom",
-        "opensearch": "http://a9.com/-/spec/opensearch/1.1/",
-        "arxiv": "http://arxiv.org/schemas/atom",
-    }
-
     @field_validator("pdf_cache_dir")
     @classmethod
     def validate_cache_dir(cls, v: str) -> str:
@@ -79,7 +51,7 @@ class OpenSearchSettings(BaseConfigSettings):
         frozen=True,
         case_sensitive=False,
     )
->>>>>>> Stashed changes
+
 
     host: str = "http://localhost:9200"
     index_name: str = "arxiv-papers"
@@ -97,24 +69,23 @@ class Settings(BaseConfigSettings):
     postgres_pool_size: int = 20
     postgres_max_overflow: int = 0
 
-<<<<<<< Updated upstream
     # OpenSearch configuration
     opensearch_host: str = "http://localhost:9200"
 
-    # Ollama configuration
+    # Ollama configuration (used in Week 1 notebook)
     ollama_host: str = "http://localhost:11434"
-    ollama_models: List[str] = Field(default=["gpt-oss:20b", "llama3.2:1b"])
+    ollama_models: List[str] = Field(default=["llama3.2:1b"])
     ollama_default_model: str = "llama3.2:1b"
     ollama_timeout: int = 300  # 5 minutes for large model operations
-=======
-    ollama_host: str = "http://localhost:11434"
-    ollama_model: str = "llama3.2:1b"
-    ollama_timeout: int = 300
 
+    ollama_timeout: int = 300  # 5 minutes for LLM operations
+
+    # arXiv settings
     arxiv: ArxivSettings = Field(default_factory=ArxivSettings)
+
+    # PDF parser settings
     pdf_parser: PDFParserSettings = Field(default_factory=PDFParserSettings)
     opensearch: OpenSearchSettings = Field(default_factory=OpenSearchSettings)
->>>>>>> Stashed changes
 
     @field_validator("postgres_database_url")
     @classmethod
@@ -125,9 +96,6 @@ class Settings(BaseConfigSettings):
 
 
 def get_settings() -> Settings:
-<<<<<<< Updated upstream
     """Get application settings."""
     return Settings()
-=======
-    return Settings()
->>>>>>> Stashed changes
+
