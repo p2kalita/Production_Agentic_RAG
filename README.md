@@ -1,264 +1,170 @@
-# The Mother of AI Project
-## Phase 1 RAG Systems: arXiv Paper Curator
+# Week 3: Keyword Search First - The Critical Foundation
 
-<div align="center">
-  <h3>A Learner-Focused Journey into Production RAG Systems</h3>
-  <p>Learn to build modern AI systems from the ground up through hands-on implementation</p>
-  <p>Master the most in-demand AI engineering skills: <strong>RAG (Retrieval-Augmented Generation)</strong></p>
-</div>
+> **🚨 The 90% Problem:** Most RAG systems jump straight to vector search and miss the foundation that powers the best retrieval systems. We're doing it right!
+
+This folder contains the materials for Week 3 of the arXiv Paper Curator project, where we implement the **keyword search foundation** that professional RAG systems rely on using OpenSearch and BM25 scoring.
+
+## 🎯 Why Keyword Search First?
+
+**The Professional Path:** Unlike tutorials that jump straight to vector embeddings, we build the foundation that successful companies use:
+
+1. **🔍 Exact Match Power:** Keywords excel at finding specific technical terms, paper IDs, and precise phrases
+2. **📊 Interpretable Results:** You can understand exactly why a paper was retrieved 
+3. **⚡ Speed & Efficiency:** BM25 is computationally fast and doesn't require expensive embedding models
+4. **📈 Production Reality:** Companies like Elasticsearch, Algolia, and enterprise search use keyword search as their foundation
+
+**The Learning Path:**
+```
+Week 3: Master BM25 keyword search    ← YOU ARE HERE
+Week 4: Add intelligent chunking
+Week 5: Introduce vector embeddings for hybrid retrieval  
+Week 6: Optimize the complete system
+```
+
+## 🚀 Before You Start
+
+**Essential Environment Setup:**
+```bash
+# 1. Ensure you have the correct environment configuration
+cp .env.example .env
+
+# 2. Verify OpenSearch settings are properly configured
+# Your .env should contain these critical Week 3 settings:
+# OPENSEARCH__HOST=http://opensearch:9200
+# OPENSEARCH__INDEX_NAME=arxiv-papers
+```
+
+**Important:** Week 3 requires the `.env` file to be properly configured for OpenSearch connectivity and indexing. The defaults in `.env.example` work out of the box.
+
+## Contents
+
+### `week3_opensearch.ipynb`
+A comprehensive Jupyter notebook that guides you through building the keyword search foundation:
+
+1. **Infrastructure Validation**
+   - Verify all Week 1-2 services are running correctly
+   - OpenSearch cluster health and connectivity testing
+   - Environment setup for Week 3 search components
+
+2. **OpenSearch Service Integration**
+   - Building a production-grade search client with factory patterns
+   - Implementing dependency injection with FastAPI lifespan management
+   - Creating JSON-based index configurations with proper analyzers
+
+## 🔍 OpenSearch Dashboard in Action
+
+*You'll add your OpenSearch dashboard screenshot here showing real paper searches with BM25 scoring and result rankings.*
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.12+-blue.svg" alt="Python Version">
-  <img src="https://img.shields.io/badge/FastAPI-0.115+-green.svg" alt="FastAPI">
-  <img src="https://img.shields.io/badge/OpenSearch-2.19-orange.svg" alt="OpenSearch">
-  <img src="https://img.shields.io/badge/Docker-Compose-blue.svg" alt="Docker">
-  <img src="https://img.shields.io/badge/Status-Week%201%20Ready-brightgreen.svg" alt="Status">
+  <img src="../../static/week3_opensearch_dashboard.png" alt="OpenSearch Dashboard Retrieving Papers" width="800">
+  <br>
+  <em>OpenSearch Dashboards showing keyword search results with BM25 relevance scoring</em>
 </p>
 
-</br>
+**Search Architecture Overview:**
+- **OpenSearch Client**: Factory-pattern service with health monitoring and CRUD operations
+- **Query Builder**: Advanced search query construction with field boosting and filtering
+- **Index Management**: JSON-based schema with English analyzers and strict mapping
+- **Search API**: RESTful endpoints (`/search`) with GET/POST methods for different query types
+- **BM25 Algorithm**: Industry-standard text relevance scoring with multi-field search
+
+3. **Index Management & Schema Design**
+   - Creating indexes with proper field mappings for academic papers
+   - Implementing English language analyzers for improved search relevance
+   - Testing index health, statistics, and document management operations
+
+4. **Document Indexing Pipeline**
+   - Migrating paper data from PostgreSQL to OpenSearch
+   - Bulk indexing operations with error handling and validation
+   - Real-time indexing verification and performance monitoring
+
+5. **BM25 Search Implementation**
+   - Multi-field search across title, abstract, and content with field boosting
+   - Advanced query features: highlighting, pagination, category filtering
+   - Testing two-letter queries (AI, ML, NN, CV) as specifically requested
+   - Fuzzy matching and typo tolerance configuration
+
+6. **Search API Development**
+   - FastAPI integration with OpenSearch dependency injection
+   - RESTful endpoints: `GET /search` for simple queries, `POST /search` for advanced search
+   - Response formatting with pagination, metadata, and highlighted snippets
+   - Error handling and service health monitoring endpoints
+
+7. **Airflow Pipeline Updates**
+   - Sequential task execution: setup → fetch → opensearch → report → cleanup
+   - Real OpenSearch indexing replacing placeholder operations
+   - Updated daily reporting with search statistics and health metrics
+   - Graceful handling of PDF processing limits (>20MB or >30 pages)
+
+8. **End-to-End Pipeline Verification**
+   - Complete flow testing: arXiv API → PostgreSQL → OpenSearch → Search API
+   - Performance benchmarking and response time measurement
+   - Production readiness assessment with monitoring and alerting
+
+**Week 3 Architecture:**
 
 <p align="center">
-  <a href="#-about-this-course">
-    <img src="static/mother_of_ai_project_rag_architecture.gif" alt="RAG Architecture" width="700">
-  </a>
+  <img src="../../static/week3_opensearch_flow.png" alt="Week 3 OpenSearch Flow Architecture" width="800">
+  <br>
+  <em>Complete Week 3 architecture showing the OpenSearch integration flow</em>
 </p>
 
-## 📖 About This Course
 
-This is a **learner-focused project** where you'll build a complete research assistant system that automatically fetches academic papers, understands their content, and answers your research questions using advanced RAG techniques.
+## Key Features Implemented
 
-**The arXiv Paper Curator** will teach you to build a **production-grade RAG system using industry best practices**. You'll master the architecture, implementation, and deployment of AI systems that professionals use in the real world.
+### 🔍 **Production-Grade Search System**
+- **BM25 Scoring**: Industry-standard relevance ranking algorithm
+- **Multi-field Search**: Query across title (3x boost), abstract (2x boost), and content (1x boost)
+- **Advanced Filtering**: Category filtering, date ranges, and custom field queries
+- **Real-time Highlighting**: Search term highlighting in results with HTML markup
+- **Pagination Support**: Efficient large result set handling with size/from parameters
 
-By the end of this course, you'll have your own AI research assistant and the skills to build similar systems for any domain.
+### 🏗️ **Clean Architecture Implementation**
+- **Factory Pattern**: Consistent service creation across all components
+- **Dependency Injection**: Proper service lifecycle management with FastAPI lifespan
+- **Query Builder Pattern**: Flexible search query construction for complex operations
+- **Error Handling**: Comprehensive exception management with graceful degradation
 
----
+### 📊 **Performance & Monitoring**
+- **Sub-100ms Search**: Optimized query performance for real-time applications
+- **Health Monitoring**: Cluster status, index statistics, and service availability
+- **Resource Limits**: PDF processing constraints to prevent memory issues
+- **Scalability**: Design patterns supporting horizontal scaling
 
-## 🚀 Quick Start
+### 🔧 **Development Best Practices**
+- **Type Safety**: Full type hints throughout the codebase
+- **Testing**: End-to-end verification with realistic data scenarios
+- **Documentation**: Comprehensive docstrings and architectural explanations
+- **Code Quality**: Following established patterns from Week 1-2 implementations
 
-### **📋 Prerequisites**
-- **Docker Desktop** (with Docker Compose)  
-- **Python 3.12+**
-- **UV Package Manager** ([Install Guide](https://docs.astral.sh/uv/getting-started/installation/))
-- **8GB+ RAM** and **20GB+ free disk space**
+## Expected Outcomes
 
-### **⚡ Get Started**
+By completing Week 3, students will have:
 
-```bash
-# 1. Clone and setup
-git clone <repository-url>
-cd zero_to_RAG
-uv sync
+1. **Working Search System**: Fully functional OpenSearch BM25 search with 28+ indexed papers
+2. **RESTful API**: Complete search API with both simple and advanced query capabilities  
+3. **Production Architecture**: Clean, scalable code following industry best practices
+4. **Performance Insights**: Understanding of search optimization and monitoring strategies
+5. **End-to-End Pipeline**: Complete RAG system foundation ready for Week 4 development
 
-# 2. Start all services
-docker compose up --build -d
+## Success Criteria
 
-# 3. Verify everything works
-curl http://localhost:8000/health
-```
+- ✅ **OpenSearch Integration**: Factory pattern service with health checks operational
+- ✅ **BM25 Search**: Relevance scoring with multi-field queries returning relevant results
+- ✅ **Advanced Features**: Filtering, highlighting, pagination, and fuzzy search working
+- ✅ **API Endpoints**: RESTful search with both GET and POST methods functional
+- ✅ **Two-Letter Queries**: AI, ML, NN, CV queries working as specifically requested
+- ✅ **Pipeline Integration**: Airflow DAGs updated for OpenSearch indexing
+- ✅ **Performance**: Sub-100ms search response times with proper error handling
 
-<<<<<<< Updated upstream
-### **📊 Access Your Services**
-=======
-Any change to `pyproject.toml` or `uv.lock` needs a rebuild: a plain `docker compose up` reuses the old image, and the API fails at startup with errors like `ModuleNotFoundError: No module named 'pypdfium2'`. Use `docker compose up --build` or `make start`, which passes `--build`.
+## What's Next?
 
-### CPU-only PyTorch
-Docling depends on PyTorch. `pyproject.toml` pins `torch` and `torchvision` to the CPU wheel index (`https://download.pytorch.org/whl/cpu`) through `[tool.uv.sources]`, so neither the API image nor your local `uv sync` downloads several GB of CUDA libraries. To check:
-
-```bash
-uv run python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
-# 2.15.0+cpu False
-```
-
-### PDF Processing Expectations
-- Not all PDFs parse successfully (expected behavior)
-- Docling works best with standard academic paper formats
-- System handles failures gracefully and continues processing
-- Success rates of 80-90% are normal for academic PDFs
->>>>>>> Stashed changes
-
-| Service | URL | Purpose |
-|---------|-----|---------|
-| **API Documentation** | http://localhost:8000/docs | Interactive API testing |
-| **Airflow Dashboard** | http://localhost:8080 | Workflow management |
-| **OpenSearch Dashboards** | http://localhost:5601 | Hybrid search engine UI |
-
-#### **NOTE**: Check airflow/simple_auth_manager_passwords.json.generated for Airflow username and password
----
-
-## 📚 Learning Materials
-
-### **📓 Week 1: Complete Setup Guide**
-**Start here!** Follow our comprehensive setup notebook:
-Please run it in terminal
-
-```bash
-# Launch the Week 1 notebook
-uv run jupyter notebook notebooks/week1/week1_setup.ipynb
-```
-
-**What you'll learn in Week 1:**
-- Complete infrastructure setup with Docker Compose
-- FastAPI development with automatic documentation and health checks
-- PostgreSQL database configuration and management
-- OpenSearch hybrid search engine setup
-- Ollama local LLM service configuration
-- Service orchestration and health monitoring
-- Professional development environment with code quality tools
-
-### **📖 Week 1 Blog Post**
-*Coming soon!* Detailed walkthrough and production insights.
+**Week 4 Preview**: Chunking Strategies and Hybrid Retrieval
+- Intelligent document chunking strategies for better context preservation
+- Combining keyword search (BM25) with vector embeddings for hybrid retrieval
+- Building the complete foundation for modern RAG systems
+- Evaluation metrics to measure retrieval quality
 
 ---
 
-## 🛠️ Technology Stack
-
-| Service | Purpose | Status |
-|---------|---------|--------|
-| **FastAPI** | REST API with automatic docs | ✅ Ready |
-| **PostgreSQL 16** | Paper metadata and content storage | ✅ Ready |
-| **OpenSearch 2.19** | Hybrid search engine | ✅ Ready |
-| **Apache Airflow 3.0** | Workflow automation | ✅ Ready |
-| **Ollama** | Local LLM serving | ✅ Ready |
-
-**Development Tools:** UV, Ruff, MyPy, Pytest, Docker Compose
-
----
-
-## 🎯 What You're Building
-
-### **Week 1: Infrastructure Foundation** ✅
-- Multi-service architecture using Docker Compose
-- REST API with health monitoring and documentation
-- Database setup with proper schema design
-- Search engine configuration for future RAG features
-- Professional development environment
-
-### **Future Weeks: Complete RAG System** (6-Week Course)
-- **Week 2:** arXiv API integration, PDF parsing with Docling, automated data ingestion
-- **Week 3:** OpenSearch hybrid search implementation with BM25 + semantic vectors
-- **Week 4:** Context-aware chunking and retrieval evaluation with nDCG metrics
-- **Week 5:** Full RAG pipeline with LLM integration and prompt optimization
-- **Week 6:** Observability with Langfuse, A/B testing, and production deployment
-
----
-
-## 🏗️ Project Structure (Week 1)
-
-```
-zero_to_RAG/
-├── src/                        # Main application code
-│   ├── main.py                # FastAPI application
-│   ├── routers/               # API endpoints
-│   ├── models/                # Database models (SQLAlchemy)
-│   ├── repositories/          # Data access layer
-│   ├── schemas/               # Pydantic validation schemas
-│   ├── services/              # Business logic
-│   ├── db/                    # Database configuration
-│   ├── config.py              # Environment configuration
-│   └── dependencies.py        # Dependency injection
-│
-├── notebooks/week1/           # Learning materials
-│   └── week1_setup.ipynb      # Complete setup guide
-│
-├── tests/                     # Comprehensive test suite
-├── airflow/dags/              # Workflow definitions
-├── static/                    # Assets (images, GIFs)
-└── compose.yml                # Service orchestration
-```
-
----
-
-## 🔧 Essential Commands
-
-### **Using the Makefile** (Recommended)
-```bash
-# View all available commands
-make help
-
-# Quick workflow
-make start         # Start all services
-make health        # Check all services health
-make test          # Run tests
-make stop          # Stop services
-```
-
-### **All Available Commands**
-| Command | Description |
-|---------|-------------|
-| `make start` | Start all services |
-| `make stop` | Stop all services |
-| `make restart` | Restart all services |
-| `make status` | Show service status |
-| `make logs` | Show service logs |
-| `make health` | Check all services health |
-| `make setup` | Install Python dependencies |
-| `make format` | Format code |
-| `make lint` | Lint and type check |
-| `make test` | Run tests |
-| `make test-cov` | Run tests with coverage |
-| `make clean` | Clean up everything |
-
-### **Direct Commands** (Alternative)
-```bash
-# If you prefer using commands directly
-docker compose up --build -d    # Start services
-docker compose ps               # Check status
-docker compose logs            # View logs
-uv run pytest                 # Run tests
-```
-
----
-
-## 🎓 Learning Path
-
-### **Week 1 Success Criteria**
-Complete when you can:
-- [ ] Start all services with `docker compose up -d`
-- [ ] Access API docs at http://localhost:8000/docs  
-- [ ] Login to Airflow at http://localhost:8080
-- [ ] Browse OpenSearch at http://localhost:5601
-- [ ] All tests pass: `uv run pytest`
-
-### **Target Audience**
-| Who | Why |
-|-----|-----|
-| **AI/ML Engineers** | Learn production RAG architecture beyond tutorials |
-| **Software Engineers** | Build end-to-end AI applications with best practices |
-| **Data Scientists** | Implement production AI systems using modern tools |
-
----
-
-## 🛠️ Troubleshooting
-
-**Common Issues:**
-- **Services not starting?** Wait 2-3 minutes, check `docker compose logs`
-- **Port conflicts?** Stop other services using ports 8000, 8080, 5432, 9200
-- **Memory issues?** Increase Docker Desktop memory allocation
-
-**Get Help:**
-- Check the comprehensive Week 1 notebook troubleshooting section
-- Review service logs: `docker compose logs [service-name]`
-- Complete reset: `docker compose down --volumes && docker compose up --build -d`
-
----
-
-## 💰 Cost Structure
-
-**This course is completely free!** You'll only need minimal costs for optional services:
-- **Local Development:** $0 (everything runs locally)
-- **Optional Cloud APIs:** ~$2-5 for external LLM services (if chosen)
-
----
-
-<div align="center">
-  <h3>🎉 Ready to Start Your AI Engineering Journey?</h3>
-  <p><strong>Begin with the Week 1 setup notebook and build your first production RAG system!</strong></p>
-  
-  <p><em>Built with ❤️ for learners who want to master modern AI engineering</em></p>
-</div>
-
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
+**Ready to build production-grade search? Let's get started with Week 3!** 🔍✨
