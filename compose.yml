@@ -71,7 +71,8 @@ services:
       - rag-network
 
   airflow:
-    image: apache/airflow:3.0.3
+    build: ./airflow
+    image: agenticrag-airflow
     container_name: rag-airflow
     environment:
       # Core settings for Airflow 3.0 with SimpleAuth (default)
@@ -106,7 +107,6 @@ services:
     entrypoint: /bin/bash
     command: >
       -c "
-        pip install pydantic pydantic-settings sqlalchemy httpx &&
         airflow db migrate &&
         exec airflow standalone
       "

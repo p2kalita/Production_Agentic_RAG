@@ -24,7 +24,8 @@ This directory contains Apache Airflow configuration and DAGs for the arXiv Pape
 ```
 airflow/
 ├── README.md                           # This file
-├── Dockerfile                          # Custom Airflow container with dependencies
+├── Dockerfile                          # apache/airflow:3.0.3 + DAG dependencies (built by compose)
+├── .dockerignore                       # Keeps logs/config out of the build context
 ├── requirements-airflow.txt            # Python dependencies for DAGs
 └── dags/
     ├── hello_world_dag.py             # Week 1 health check DAG
@@ -43,9 +44,11 @@ The Airflow container is configured for cross-platform deployment:
 - **Service Dependencies**: Automatic initialization and health checks
 
 ### Container Features
-- **Python 3.12** with Apache Airflow 2.10.3
+- **Python 3.12** with Apache Airflow 3.0.3 (official `apache/airflow` base image)
+- **Dependencies baked into the image**: nothing is pip-installed at container start; rebuild with `docker compose up --build airflow` after changing `requirements-airflow.txt`
+- **CPU-only PyTorch** from the PyTorch CPU wheel index (no CUDA libraries)
 - **PostgreSQL support** via psycopg2
-- **PDF processing** with Docling, Tesseract OCR, and Poppler utilities
+- **PDF processing** with Docling and pypdfium2 (OCR is off by default, so no Tesseract/Poppler system packages are installed)
 - **Rate limiting** and retry logic for arXiv API compliance
 - **Async processing** for optimal performance with concurrent downloads and parsing
 
