@@ -11,13 +11,13 @@ services:
       opensearch:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')\""]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     environment:
-      - OPENSEARCH_HOST=http://opensearch:9200
+      - OPENSEARCH__HOST=http://opensearch:9200
       - OLLAMA_HOST=http://ollama:11434
       - POSTGRES_DATABASE_URL=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
       - ENVIRONMENT=development
@@ -83,7 +83,7 @@ services:
       - AIRFLOW_HOME=/opt/airflow/home
       # Environment variables for DAG tasks
       - POSTGRES_DATABASE_URL=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
-      - OPENSEARCH_HOST=http://opensearch:9200
+      - OPENSEARCH__HOST=http://opensearch:9200
       - PYTHONPATH=/opt/airflow/src
     volumes:
       - ./airflow/dags:/opt/airflow/dags
