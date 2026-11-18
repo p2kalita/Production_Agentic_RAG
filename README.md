@@ -78,7 +78,25 @@ By completing this week's materials, students will:
 
 ```
 
+<<<<<<< Updated upstream
 ### **📊 Access Your Services**
+=======
+Any change to `pyproject.toml` or `uv.lock` needs a rebuild: a plain `docker compose up` reuses the old image, and the API fails at startup with errors like `ModuleNotFoundError: No module named 'pypdfium2'`. Use `docker compose up --build` or `make start`, which passes `--build`.
+
+### CPU-only PyTorch
+Docling depends on PyTorch. `pyproject.toml` pins `torch` and `torchvision` to the CPU wheel index (`https://download.pytorch.org/whl/cpu`) through `[tool.uv.sources]`, so neither the API image nor your local `uv sync` downloads several GB of CUDA libraries. To check:
+
+```bash
+uv run python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
+# 2.15.0+cpu False
+```
+
+### PDF Processing Expectations
+- Not all PDFs parse successfully (expected behavior)
+- Docling works best with standard academic paper formats
+- System handles failures gracefully and continues processing
+- Success rates of 80-90% are normal for academic PDFs
+>>>>>>> Stashed changes
 
 | Service | URL | Purpose |
 |---------|-----|---------|

@@ -21,33 +21,6 @@ class BaseConfigSettings(BaseSettings):
 
 class Settings(DefaultSettings):
     """Application settings."""
-
-class ArxivSettings(BaseConfigSettings):
-    model_config = SettingsConfigDict(
-        env_file=[".env", str(ENV_FILE_PATH)],
-        env_prefix="ARXIV__",
-        extra="ignore",
-        frozen=True,
-        case_sensitive=False,
-    )
-
-    base_url: str = "https://export.arxiv.org/api/query"
-    pdf_cache_dir: str = "./data/arxiv_pdfs"
-    rate_limit_delay: float = 3.0
-    timeout_seconds: int = 30
-    max_results: int = 15
-    search_category: str = "cs.AI"
-    download_max_retries: int = 3
-    download_retry_delay_base: float = 5.0
-    max_concurrent_downloads: int = 5
-    max_concurrent_parsing: int = 1
-
-    namespaces: dict = {
-        "atom": "http://www.w3.org/2005/Atom",
-        "opensearch": "http://a9.com/-/spec/opensearch/1.1/",
-        "arxiv": "http://arxiv.org/schemas/atom",
-    }
-
     @field_validator("pdf_cache_dir")
     @classmethod
     def validate_cache_dir(cls, v: str) -> str:
@@ -79,6 +52,7 @@ class OpenSearchSettings(BaseConfigSettings):
         case_sensitive=False,
     )
 
+
     host: str = "http://localhost:9200"
     index_name: str = "arxiv-papers"
     max_text_size: int = 1000000
@@ -103,6 +77,7 @@ class Settings(BaseConfigSettings):
     ollama_models: List[str] = Field(default=["llama3.2:1b"])
     ollama_default_model: str = "llama3.2:1b"
     ollama_timeout: int = 300  # 5 minutes for large model operations
+
     ollama_timeout: int = 300  # 5 minutes for LLM operations
 
     # arXiv settings
@@ -123,3 +98,4 @@ class Settings(BaseConfigSettings):
 def get_settings() -> Settings:
     """Get application settings."""
     return Settings()
+

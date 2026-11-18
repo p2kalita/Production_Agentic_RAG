@@ -9,9 +9,11 @@ from src.db.factory import make_database
 
 # Week 1: No complex middleware needed
 from src.routers import ask, papers, ping
+
 from src.routers import papers, ping
 from src.services.arxiv.factory import make_arxiv_client
 from src.services.pdf_parser.factory import make_pdf_parser_service
+
 
 # Setup logging
 logging.basicConfig(
@@ -39,6 +41,7 @@ async def lifespan(app: FastAPI):
     app.state.pdf_parser_service = None
     app.state.opensearch_service = None
     app.state.llm_service = None
+
     # Initialize services (kept for future endpoints and notebook demos)
     app.state.arxiv_client = make_arxiv_client()
     app.state.pdf_parser = make_pdf_parser_service()
@@ -63,9 +66,7 @@ app = FastAPI(
 app.include_router(ping.router)
 app.include_router(papers.router)
 app.include_router(ask.router)
-=======
-app.include_router(ping.router, prefix="/api/v1")
-app.include_router(papers.router, prefix="/api/v1")
+app.include_router(search.router, prefix="/api/v1")
 
 
 if __name__ == "__main__":
