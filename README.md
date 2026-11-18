@@ -77,6 +77,28 @@ By completing this week's materials, students will:
 ## Pipeline Architecture
 
 ```
+
+### **📊 Access Your Services**
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| **API Documentation** | http://localhost:8000/docs | Interactive API testing |
+| **Airflow Dashboard** | http://localhost:8080 | Workflow management |
+| **OpenSearch Dashboards** | http://localhost:5601 | Hybrid search engine UI |
+
+#### **NOTE**: Check airflow/simple_auth_manager_passwords.json.generated for Airflow username and password
+---
+
+## 📚 Learning Materials
+
+### **📓 Week 1: Complete Setup Guide**
+**Start here!** Follow our comprehensive setup notebook:
+Please run it in terminal
+
+```bash
+# Launch the Week 1 notebook
+uv run jupyter notebook notebooks/week1/week1_setup.ipynb
+
 arXiv Search Query → Rate Limited API Calls → PDF Downloads → Docling Parsing → Database Storage
         ↓                    ↓                    ↓              ↓               ↓
    Date Filtering    →  Retry Logic       →   Caching      → Structure    →  Upsert Logic

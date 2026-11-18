@@ -14,8 +14,23 @@ dependencies = [
     "opensearch-py>=3.0.0",
     "requests>=2.32.3",
     "httpx>=0.28.1",
+    "docling>=2.43.0",
+    "python-dateutil>=2.9.0.post0",
+    "pypdfium2>=5.15.2",
+    # Pinned to CPU-only wheels via [tool.uv.sources] below (no GPU in this project).
+    "torch>=2.2",
+    "torchvision>=0.17",
 ]
 readme = "README.md"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+torchvision = [{ index = "pytorch-cpu" }]
 
 [dependency-groups]
 dev = [
@@ -50,8 +65,8 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 env_files = ".env.test"
 
-[tool.coverage.run]
-omit = [
-    "src/mock_llm_server.py",
-]
-testpaths = ["tests"] 
+[tool.mypy]
+explicit_package_bases = true
+ignore_errors = true
+
+
