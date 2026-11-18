@@ -1,209 +1,170 @@
-# Week 2: arXiv API Integration & PDF Processing
+# Week 3: Keyword Search First - The Critical Foundation
 
-This folder contains the materials for Week 2 of the arXiv Paper Curator project, which focuses on building the core data ingestion pipeline that feeds fresh academic content into our RAG system.
+> **🚨 The 90% Problem:** Most RAG systems jump straight to vector search and miss the foundation that powers the best retrieval systems. We're doing it right!
+
+This folder contains the materials for Week 3 of the arXiv Paper Curator project, where we implement the **keyword search foundation** that professional RAG systems rely on using OpenSearch and BM25 scoring.
+
+## 🎯 Why Keyword Search First?
+
+**The Professional Path:** Unlike tutorials that jump straight to vector embeddings, we build the foundation that successful companies use:
+
+1. **🔍 Exact Match Power:** Keywords excel at finding specific technical terms, paper IDs, and precise phrases
+2. **📊 Interpretable Results:** You can understand exactly why a paper was retrieved 
+3. **⚡ Speed & Efficiency:** BM25 is computationally fast and doesn't require expensive embedding models
+4. **📈 Production Reality:** Companies like Elasticsearch, Algolia, and enterprise search use keyword search as their foundation
+
+**The Learning Path:**
+```
+Week 3: Master BM25 keyword search    ← YOU ARE HERE
+Week 4: Add intelligent chunking
+Week 5: Introduce vector embeddings for hybrid retrieval  
+Week 6: Optimize the complete system
+```
+
+## 🚀 Before You Start
+
+**Essential Environment Setup:**
+```bash
+# 1. Ensure you have the correct environment configuration
+cp .env.example .env
+
+# 2. Verify OpenSearch settings are properly configured
+# Your .env should contain these critical Week 3 settings:
+# OPENSEARCH__HOST=http://opensearch:9200
+# OPENSEARCH__INDEX_NAME=arxiv-papers
+```
+
+**Important:** Week 3 requires the `.env` file to be properly configured for OpenSearch connectivity and indexing. The defaults in `.env.example` work out of the box.
 
 ## Contents
 
-### `week2_arxiv_integration.ipynb`
-A comprehensive Jupyter notebook that guides students through:
+### `week3_opensearch.ipynb`
+A comprehensive Jupyter notebook that guides you through building the keyword search foundation:
 
 1. **Infrastructure Validation**
-   - Verify all Week 1 services are running correctly
-   - Container health checks and fresh build verification
-   - Environment setup for Week 2 components
+   - Verify all Week 1-2 services are running correctly
+   - OpenSearch cluster health and connectivity testing
+   - Environment setup for Week 3 search components
 
-2. **arXiv API Integration**
-   - Building a robust client with rate limiting and retry logic
-   - Implementing date-based filtering for targeted paper retrieval
-   - Testing CS.AI category searches with proper API etiquette
+2. **OpenSearch Service Integration**
+   - Building a production-grade search client with factory patterns
+   - Implementing dependency injection with FastAPI lifespan management
+   - Creating JSON-based index configurations with proper analyzers
+
+## 🔍 OpenSearch Dashboard in Action
+
+*You'll add your OpenSearch dashboard screenshot here showing real paper searches with BM25 scoring and result rankings.*
 
 <p align="center">
-  <img src="../../static/week2_data_ingestion_flow.png" alt="Week 2 Data Ingestion Architecture" width="800">
+  <img src="../../static/week3_opensearch_dashboard.png" alt="OpenSearch Dashboard Retrieving Papers" width="800">
+  <br>
+  <em>OpenSearch Dashboards showing keyword search results with BM25 relevance scoring</em>
 </p>
 
-**Data Pipeline Overview:**
-- **MetadataFetcher**: 🎯 Main orchestrator coordinating the entire pipeline
-- **ArxivClient**: Rate-limited fetching with retry logic (3-second delays)
-- **PDFParserService**: Scientific PDF parsing with structured content extraction
-- **PaperRepository**: PostgreSQL integration with upsert operations
-- **Airflow DAGs**: Automated daily ingestion workflows
+**Search Architecture Overview:**
+- **OpenSearch Client**: Factory-pattern service with health monitoring and CRUD operations
+- **Query Builder**: Advanced search query construction with field boosting and filtering
+- **Index Management**: JSON-based schema with English analyzers and strict mapping
+- **Search API**: RESTful endpoints (`/search`) with GET/POST methods for different query types
+- **BM25 Algorithm**: Industry-standard text relevance scoring with multi-field search
 
-3. **PDF Processing Pipeline**
-   - Download and cache PDF files with proper error handling
-   - Parse scientific PDFs using Docling for structured content extraction
-   - Handle parsing failures gracefully with fallback mechanisms
+3. **Index Management & Schema Design**
+   - Creating indexes with proper field mappings for academic papers
+   - Implementing English language analyzers for improved search relevance
+   - Testing index health, statistics, and document management operations
 
-4. **Database Integration**
-   - Store paper metadata and content in PostgreSQL
-   - Implement upsert logic to avoid duplicates
-   - Test retrieval and query operations
+4. **Document Indexing Pipeline**
+   - Migrating paper data from PostgreSQL to OpenSearch
+   - Bulk indexing operations with error handling and validation
+   - Real-time indexing verification and performance monitoring
 
-5. **Complete Pipeline Testing**
-   - End-to-end processing from arXiv API to database storage
-   - Error handling and graceful degradation testing
-   - Performance metrics and success rate analysis
+5. **BM25 Search Implementation**
+   - Multi-field search across title, abstract, and content with field boosting
+   - Advanced query features: highlighting, pagination, category filtering
+   - Testing two-letter queries (AI, ML, NN, CV) as specifically requested
+   - Fuzzy matching and typo tolerance configuration
 
-6. **Production Readiness**
-   - Airflow DAG status verification
-   - Error logging and monitoring capabilities
-   - Ready for automated daily ingestion
+6. **Search API Development**
+   - FastAPI integration with OpenSearch dependency injection
+   - RESTful endpoints: `GET /search` for simple queries, `POST /search` for advanced search
+   - Response formatting with pagination, metadata, and highlighted snippets
+   - Error handling and service health monitoring endpoints
 
-## Learning Objectives
+7. **Airflow Pipeline Updates**
+   - Sequential task execution: setup → fetch → opensearch → report → cleanup
+   - Real OpenSearch indexing replacing placeholder operations
+   - Updated daily reporting with search statistics and health metrics
+   - Graceful handling of PDF processing limits (>20MB or >30 pages)
 
-By completing this week's materials, students will:
+8. **End-to-End Pipeline Verification**
+   - Complete flow testing: arXiv API → PostgreSQL → OpenSearch → Search API
+   - Performance benchmarking and response time measurement
+   - Production readiness assessment with monitoring and alerting
 
-- Master API integration with proper rate limiting and error handling
-- Learn PDF processing techniques for scientific documents
-- Understand database design patterns for research data storage
-- Build robust data pipelines with comprehensive error handling
-- Gain experience with async Python programming patterns
-- Learn workflow automation concepts with Apache Airflow
-- Develop skills in production-grade data processing systems
+**Week 3 Architecture:**
 
-## Key Technologies & Services
+<p align="center">
+  <img src="../../static/week3_opensearch_flow.png" alt="Week 3 OpenSearch Flow Architecture" width="800">
+  <br>
+  <em>Complete Week 3 architecture showing the OpenSearch integration flow</em>
+</p>
 
-### Core Services (Built This Week)
-- **arXiv API Client** - Fetches CS.AI papers with intelligent rate limiting
-- **PDF Parser (Docling)** - Extracts structured content from scientific PDFs
-- **Metadata Fetcher** - Orchestrates the complete processing pipeline
-- **Database Repository** - Handles PostgreSQL operations with SQLAlchemy
 
-### Infrastructure Dependencies (From Week 1)
-- **PostgreSQL 16** - Paper metadata and content storage
-- **FastAPI** - REST API endpoints for paper retrieval
-- **Apache Airflow** - Workflow orchestration and scheduling
-- **Docker Compose** - Service orchestration and networking
+## Key Features Implemented
 
-## Pipeline Architecture
+### 🔍 **Production-Grade Search System**
+- **BM25 Scoring**: Industry-standard relevance ranking algorithm
+- **Multi-field Search**: Query across title (3x boost), abstract (2x boost), and content (1x boost)
+- **Advanced Filtering**: Category filtering, date ranges, and custom field queries
+- **Real-time Highlighting**: Search term highlighting in results with HTML markup
+- **Pagination Support**: Efficient large result set handling with size/from parameters
 
-```
+### 🏗️ **Clean Architecture Implementation**
+- **Factory Pattern**: Consistent service creation across all components
+- **Dependency Injection**: Proper service lifecycle management with FastAPI lifespan
+- **Query Builder Pattern**: Flexible search query construction for complex operations
+- **Error Handling**: Comprehensive exception management with graceful degradation
 
-<<<<<<< Updated upstream
-### **📊 Access Your Services**
-=======
-Any change to `pyproject.toml` or `uv.lock` needs a rebuild: a plain `docker compose up` reuses the old image, and the API fails at startup with errors like `ModuleNotFoundError: No module named 'pypdfium2'`. Use `docker compose up --build` or `make start`, which passes `--build`.
+### 📊 **Performance & Monitoring**
+- **Sub-100ms Search**: Optimized query performance for real-time applications
+- **Health Monitoring**: Cluster status, index statistics, and service availability
+- **Resource Limits**: PDF processing constraints to prevent memory issues
+- **Scalability**: Design patterns supporting horizontal scaling
 
-### CPU-only PyTorch
-Docling depends on PyTorch. `pyproject.toml` pins `torch` and `torchvision` to the CPU wheel index (`https://download.pytorch.org/whl/cpu`) through `[tool.uv.sources]`, so neither the API image nor your local `uv sync` downloads several GB of CUDA libraries. To check:
+### 🔧 **Development Best Practices**
+- **Type Safety**: Full type hints throughout the codebase
+- **Testing**: End-to-end verification with realistic data scenarios
+- **Documentation**: Comprehensive docstrings and architectural explanations
+- **Code Quality**: Following established patterns from Week 1-2 implementations
 
-```bash
-uv run python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
-# 2.15.0+cpu False
-```
+## Expected Outcomes
 
-### PDF Processing Expectations
-- Not all PDFs parse successfully (expected behavior)
-- Docling works best with standard academic paper formats
-- System handles failures gracefully and continues processing
-- Success rates of 80-90% are normal for academic PDFs
->>>>>>> Stashed changes
+By completing Week 3, students will have:
 
-| Service | URL | Purpose |
-|---------|-----|---------|
-| **API Documentation** | http://localhost:8000/docs | Interactive API testing |
-| **Airflow Dashboard** | http://localhost:8080 | Workflow management |
-| **OpenSearch Dashboards** | http://localhost:5601 | Hybrid search engine UI |
-
-#### **NOTE**: Check airflow/simple_auth_manager_passwords.json.generated for Airflow username and password
----
-
-## 📚 Learning Materials
-
-### **📓 Week 1: Complete Setup Guide**
-**Start here!** Follow our comprehensive setup notebook:
-Please run it in terminal
-
-```bash
-# Launch the Week 1 notebook
-uv run jupyter notebook notebooks/week1/week1_setup.ipynb
-
-arXiv Search Query → Rate Limited API Calls → PDF Downloads → Docling Parsing → Database Storage
-        ↓                    ↓                    ↓              ↓               ↓
-   Date Filtering    →  Retry Logic       →   Caching      → Structure    →  Upsert Logic
-   Category Filter   →  Error Handling    →   Validation   → Extraction   →  Transactions
-   Result Limiting   →  3s Rate Limit     →   Size Checks  → Metadata     →  Relationships
-```
-
-## Performance Characteristics
-
-**Week 2 System Capabilities:**
-- **arXiv API**: ~20 papers/minute (respecting 3-second rate limits)
-- **PDF Processing**: 2-5 seconds per paper (depends on PDF complexity)
-- **Database Storage**: ~100 papers/second (batch operations)
-- **Error Handling**: Graceful continuation despite individual failures
-- **Success Rates**: 95%+ for paper fetching, 80-90% for PDF parsing
-
-## Target Audience
-
-This material is designed for:
-- **Data Engineers** learning research data pipeline construction
-- **Students** interested in academic research automation
-- **Developers** building content aggregation systems
-- **Researchers** wanting to automate literature discovery
-- **Anyone** building production data ingestion pipelines
-
-## Time Commitment
-
-- **Fresh container build**: 10-15 minutes (required for Week 2 dependencies)
-- **Notebook completion**: 45-60 minutes
-- **Pipeline testing**: 30-45 minutes
-- **Total**: 1.5-2 hours
-
-## 📖 Additional Resources
-
-**Week 2 Blog Post:** [Building Robust Data Pipelines for Academic Research](https://jamwithai.substack.com/p/building-data-pipelines-academic-research)
-- Deep dive into arXiv API best practices
-- PDF processing strategies for scientific documents
-- Error handling patterns for production systems
-- Database design for research metadata
-
-## Important Notes
-
-### Fresh Container Build Required
-Week 2 requires rebuilding containers with new dependencies:
-
-```bash
-# Shutdown and rebuild (REQUIRED for Week 2)
-docker compose down
-docker compose up --build
-
-# This ensures:
-# - New Python dependencies (docling, arxiv client)
-# - Updated Airflow DAGs
-# - Fresh service configurations
-```
-
-### PDF Processing Expectations
-- Not all PDFs parse successfully (expected behavior)
-- Docling works best with standard academic paper formats
-- System handles failures gracefully and continues processing
-- Success rates of 80-90% are normal for academic PDFs
-
-## Support Resources
-
-If you encounter issues:
-1. Ensure fresh containers are built (`docker compose up --build`)
-2. Check the troubleshooting sections in the notebook
-3. Review service health checks and logs
-4. Verify all Week 1 infrastructure is working
-5. Ask in Jam With AI substack chat channel
-
-## Next Steps
-
-After completing Week 2, you will be ready to:
-- Understand production data pipeline architecture
-- Handle real-world API integration challenges
-- Implement robust error handling and monitoring
-- Proceed to Week 3: OpenSearch Integration and Full-Text Search
-- Build confidence in handling complex data processing workflows
+1. **Working Search System**: Fully functional OpenSearch BM25 search with 28+ indexed papers
+2. **RESTful API**: Complete search API with both simple and advanced query capabilities  
+3. **Production Architecture**: Clean, scalable code following industry best practices
+4. **Performance Insights**: Understanding of search optimization and monitoring strategies
+5. **End-to-End Pipeline**: Complete RAG system foundation ready for Week 4 development
 
 ## Success Criteria
 
-✅ **Week 2 Complete When:**
-- arXiv API client fetches papers with proper rate limiting
-- PDF download and caching works reliably
-- Docling parser extracts structured content from scientific papers
-- Database stores complete paper metadata with relationships
-- Complete pipeline processes papers end-to-end with error handling
-- Airflow DAGs are configured and ready for automation
-- All components demonstrate production-grade error handling and monitoring
+- ✅ **OpenSearch Integration**: Factory pattern service with health checks operational
+- ✅ **BM25 Search**: Relevance scoring with multi-field queries returning relevant results
+- ✅ **Advanced Features**: Filtering, highlighting, pagination, and fuzzy search working
+- ✅ **API Endpoints**: RESTful search with both GET and POST methods functional
+- ✅ **Two-Letter Queries**: AI, ML, NN, CV queries working as specifically requested
+- ✅ **Pipeline Integration**: Airflow DAGs updated for OpenSearch indexing
+- ✅ **Performance**: Sub-100ms search response times with proper error handling
+
+## What's Next?
+
+**Week 4 Preview**: Chunking Strategies and Hybrid Retrieval
+- Intelligent document chunking strategies for better context preservation
+- Combining keyword search (BM25) with vector embeddings for hybrid retrieval
+- Building the complete foundation for modern RAG systems
+- Evaluation metrics to measure retrieval quality
+
+---
+
+**Ready to build production-grade search? Let's get started with Week 3!** 🔍✨

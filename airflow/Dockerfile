@@ -1,52 +1,20 @@
-FROM python:3.12-slim
+ARG AIRFLOW_VERSION=3.0.3
+FROM apache/airflow:${AIRFLOW_VERSION}
 
-# Set environment variables
-ENV AIRFLOW_HOME=/opt/airflow
-ENV AIRFLOW_VERSION=2.10.3
-ENV PYTHON_VERSION=3.12
-ENV CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+# Re-declare after FROM so it is usable in RUN steps.
+ARG AIRFLOW_VERSION
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        curl \
-        git \
-        libpq-dev \
-        poppler-utils \
-        tesseract-ocr \
-        && rm -rf /var/lib/apt/lists/*
-
-# Create airflow user with UID/GID 50000 for cross-platform compatibility
-RUN groupadd -r -g 50000 airflow && useradd -r -u 50000 -g airflow -d ${AIRFLOW_HOME} -s /bin/bash airflow
-
-# Create airflow directories with proper ownership
-RUN mkdir -p ${AIRFLOW_HOME} && \
-    mkdir -p ${AIRFLOW_HOME}/dags && \
-    mkdir -p ${AIRFLOW_HOME}/logs && \
-    mkdir -p ${AIRFLOW_HOME}/plugins && \
-    chown -R 50000:50000 ${AIRFLOW_HOME} && \
-    chmod -R 755 ${AIRFLOW_HOME}
-
-# Install Airflow with PostgreSQL support
-RUN pip install --no-cache-dir \
-    "apache-airflow[postgres]==${AIRFLOW_VERSION}" \
-    --constraint "${CONSTRAINT_URL}" \
-    psycopg2-binary
-
-# Copy requirements and install project dependencies
-COPY requirements-airflow.txt /tmp/requirements-airflow.txt
-RUN pip install --no-cache-dir -r /tmp/requirements-airflow.txt
-
-# Copy and set up entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# Switch to airflow user and set working directory
+# The base image runs as the `airflow` user; packages install into its user site.
 USER airflow
-WORKDIR ${AIRFLOW_HOME}
 
-# Expose port
-EXPOSE 8080
+# 1) CPU-only PyTorch (docling dependency). Installed alone from the PyTorch CPU
+#    index so no CUDA libraries are pulled and no other package comes from that index.
+RUN pip install --no-cache-dir torch torchvision \
+        --index-url https://download.pytorch.org/whl/cpu
 
-CMD ["/entrypoint.sh"]
+# 2) DAG dependencies. Pinning apache-airflow to the installed version in the same
+#    command keeps pip from changing Airflow or its own dependencies (e.g. SQLAlchemy 1.4).
+COPY requirements-airflow.txt /tmp/requirements-airflow.txt
+RUN pip install --no-cache-dir \
+        "apache-airflow==${AIRFLOW_VERSION}" \
+        -r /tmp/requirements-airflow.txt

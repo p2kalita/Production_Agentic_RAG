@@ -19,8 +19,32 @@ class BaseConfigSettings(BaseSettings):
     )
 
 
-class Settings(DefaultSettings):
-    """Application settings."""
+class ArxivSettings(BaseConfigSettings):
+    model_config = SettingsConfigDict(
+        env_file=[".env", str(ENV_FILE_PATH)],
+        env_prefix="ARXIV__",
+        extra="ignore",
+        frozen=True,
+        case_sensitive=False,
+    )
+
+    base_url: str = "https://export.arxiv.org/api/query"
+    pdf_cache_dir: str = "./data/arxiv_pdfs"
+    rate_limit_delay: float = 3.0
+    timeout_seconds: int = 30
+    max_results: int = 15
+    search_category: str = "cs.AI"
+    download_max_retries: int = 3
+    download_retry_delay_base: float = 5.0
+    max_concurrent_downloads: int = 5
+    max_concurrent_parsing: int = 1
+
+    namespaces: dict = {
+        "atom": "http://www.w3.org/2005/Atom",
+        "opensearch": "http://a9.com/-/spec/opensearch/1.1/",
+        "arxiv": "http://arxiv.org/schemas/atom",
+    }
+
     @field_validator("pdf_cache_dir")
     @classmethod
     def validate_cache_dir(cls, v: str) -> str:
@@ -52,7 +76,6 @@ class OpenSearchSettings(BaseConfigSettings):
         case_sensitive=False,
     )
 
-
     host: str = "http://localhost:9200"
     index_name: str = "arxiv-papers"
     max_text_size: int = 1000000
@@ -64,26 +87,16 @@ class Settings(BaseConfigSettings):
     environment: Literal["development", "staging", "production"] = "development"
     service_name: str = "rag-api"
 
-    postgres_database_url: str = "postgresql://rag_user:rag_password@localhost:5432/rag_db"
+    postgres_database_url: str = "postgresql+psycopg2://rag_user:rag_password@localhost:5432/rag_db"
     postgres_echo_sql: bool = False
     postgres_pool_size: int = 20
     postgres_max_overflow: int = 0
 
-    # OpenSearch configuration
-    opensearch_host: str = "http://localhost:9200"
-
-    # Ollama configuration (used in Week 1 notebook)
     ollama_host: str = "http://localhost:11434"
-    ollama_models: List[str] = Field(default=["llama3.2:1b"])
-    ollama_default_model: str = "llama3.2:1b"
-    ollama_timeout: int = 300  # 5 minutes for large model operations
+    ollama_model: str = "llama3.2:1b"
+    ollama_timeout: int = 300
 
-    ollama_timeout: int = 300  # 5 minutes for LLM operations
-
-    # arXiv settings
     arxiv: ArxivSettings = Field(default_factory=ArxivSettings)
-
-    # PDF parser settings
     pdf_parser: PDFParserSettings = Field(default_factory=PDFParserSettings)
     opensearch: OpenSearchSettings = Field(default_factory=OpenSearchSettings)
 
@@ -92,10 +105,11 @@ class Settings(BaseConfigSettings):
     def validate_database_url(cls, v: str) -> str:
         if not (v.startswith("postgresql://") or v.startswith("postgresql+psycopg2://")):
             raise ValueError("Database URL must start with 'postgresql://' or 'postgresql+psycopg2://'")
+        # SQLAlchemy 2.1 maps a bare "postgresql://" to psycopg (v3), but only psycopg2 is installed.
+        if v.startswith("postgresql://"):
+            v = "postgresql+psycopg2://" + v[len("postgresql://"):]
         return v
 
 
 def get_settings() -> Settings:
-    """Get application settings."""
     return Settings()
-
