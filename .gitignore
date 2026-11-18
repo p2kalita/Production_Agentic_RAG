@@ -249,3 +249,7 @@ data/
 test_*.py
 test_output/
 test_data/
+
+# Specs
+.claude
+openspec

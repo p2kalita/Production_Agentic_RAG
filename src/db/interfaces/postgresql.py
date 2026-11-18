@@ -1,15 +1,21 @@
+import hashlib
 import logging
 from contextlib import contextmanager
-from typing import Generator
+from typing import Generator, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 from src.db.interfaces.base import BaseDatabase
 
 logger = logging.getLogger(__name__)
+
+# Fixed key for pg_advisory_xact_lock that serializes schema creation across processes.
+# Derived from the string "rag-api:schema-init"; must be identical in every process.
+SCHEMA_INIT_LOCK_KEY = int.from_bytes(hashlib.sha256(b"rag-api:schema-init").digest()[:8], "big", signed=True)
 
 
 class PostgreSQLSettings(BaseSettings):
@@ -34,8 +40,8 @@ class PostgreSQLDatabase(BaseDatabase):
 
     def __init__(self, config: PostgreSQLSettings):
         self.config = config
-        self.engine = None
-        self.session_factory = None
+        self.engine: Optional[Engine] = None
+        self.session_factory: Optional[sessionmaker] = None
 
     def startup(self) -> None:
         """Initialize the database connection."""
@@ -56,19 +62,21 @@ class PostgreSQLDatabase(BaseDatabase):
             self.session_factory = sessionmaker(bind=self.engine, expire_on_commit=False)
 
             # Test the connection
+            assert self.engine is not None
             with self.engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
                 logger.info("Database connection test successful")
 
-            # Check which tables exist before creating
-            inspector = inspect(self.engine)
-            existing_tables = inspector.get_table_names()
+            # Create missing tables under a transaction-scoped advisory lock so that
+            # concurrent processes (uvicorn workers, Airflow tasks) don't race on
+            # CREATE TABLE. Waiters see the tables already exist once the lock frees.
+            with self.engine.begin() as conn:
+                conn.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": SCHEMA_INIT_LOCK_KEY})
 
-            # Create tables if they don't exist (idempotent operation)
-            Base.metadata.create_all(bind=self.engine)
+                existing_tables = inspect(conn).get_table_names()
+                Base.metadata.create_all(bind=conn)
+                updated_tables = inspect(conn).get_table_names()
 
-            # Check if any new tables were created
-            updated_tables = inspector.get_table_names()
             new_tables = set(updated_tables) - set(existing_tables)
 
             if new_tables:
@@ -77,6 +85,7 @@ class PostgreSQLDatabase(BaseDatabase):
                 logger.info("All tables already exist - no new tables created")
 
             logger.info("PostgreSQL database initialized successfully")
+            assert self.engine is not None
             logger.info(f"Database: {self.engine.url.database}")
             logger.info(f"Total tables: {', '.join(updated_tables) if updated_tables else 'None'}")
             logger.info("Database connection established")
