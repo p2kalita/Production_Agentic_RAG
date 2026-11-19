@@ -31,7 +31,7 @@ Week 4 implements a **production-grade hybrid search system** that combines the 
 ### System Overview
 
 <p align="center">
-  <img src="../../static/week4_hybrid_opensearch.png" alt="Week 4 Hybrid Search Architecture" width="800">
+  <img src="static/week4_hybrid_opensearch.png" alt="Week 4 Hybrid Search Architecture" width="800">
   <br>
   <em>Complete Week 4 architecture showing hybrid search with chunking, embeddings, and RRF fusion</em>
 </p>
