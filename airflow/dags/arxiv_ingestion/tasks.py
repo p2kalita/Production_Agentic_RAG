@@ -3,7 +3,7 @@ import logging
 import sys
 from datetime import datetime, timedelta
 from functools import lru_cache
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # Add project root to Python path for imports
 sys.path.insert(0, "/opt/airflow")
@@ -13,6 +13,7 @@ from sqlalchemy import text
 from src.db.factory import make_database
 from src.repositories.paper import PaperRepository
 from src.services.arxiv.factory import make_arxiv_client
+from src.services.indexing.factory import make_hybrid_indexing_service
 from src.services.metadata_fetcher import make_metadata_fetcher
 from src.services.opensearch.factory import make_opensearch_client
 from src.services.pdf_parser.factory import make_pdf_parser_service
@@ -34,8 +35,8 @@ def get_cached_services() -> Tuple[Any, Any, Any, Any, Any]:
     database = make_database()
     opensearch_client = make_opensearch_client()
 
-    # Create metadata fetcher with dependencies
-    metadata_fetcher = make_metadata_fetcher(arxiv_client, pdf_parser, opensearch_client)
+    # Create metadata fetcher (fetch + PDF parsing + DB storage only; indexing is a separate task)
+    metadata_fetcher = make_metadata_fetcher(arxiv_client, pdf_parser)
 
     logger.info("All services initialized and cached with lru_cache")
     return arxiv_client, pdf_parser, database, metadata_fetcher, opensearch_client
@@ -45,14 +46,12 @@ async def run_paper_ingestion_pipeline(
     target_date: str,
     max_results: Optional[int] = None,
     process_pdfs: bool = True,
-    index_to_opensearch: bool = True,
 ) -> dict:
-    """Async wrapper for the paper ingestion pipeline.
+    """Async wrapper for the paper ingestion pipeline (fetch, parse PDFs, store to PostgreSQL).
 
     :param target_date: Date to fetch papers for (YYYYMMDD format)
     :param max_results: Maximum number of papers to fetch (uses config default if None)
     :param process_pdfs: Whether to process PDFs
-    :param index_to_opensearch: Whether to index papers to OpenSearch
     :returns: Dictionary with processing results
     """
     arxiv_client, _pdf_parser, database, metadata_fetcher, _opensearch_client = get_cached_services()
@@ -70,7 +69,6 @@ async def run_paper_ingestion_pipeline(
             process_pdfs=process_pdfs,
             store_to_db=True,
             db_session=session,
-            index_to_opensearch=index_to_opensearch,
         )
 
 
@@ -87,14 +85,16 @@ def setup_environment():
             session.execute(text("SELECT 1"))
             logger.info("Database connection verified")
 
-        # Test OpenSearch connection and create index if needed
+        # Test OpenSearch connection and create the hybrid chunk index + RRF pipeline if needed
         if opensearch_client.health_check():
             logger.info("OpenSearch connection verified")
-            # Ensure index exists
-            if opensearch_client.create_index(force=False):
-                logger.info("OpenSearch index created")
+            setup_results = opensearch_client.setup_indices(force=False)
+            if setup_results.get("hybrid_index"):
+                logger.info(f"OpenSearch hybrid index created: {opensearch_client.index_name}")
             else:
-                logger.info("OpenSearch index already exists")
+                logger.info(f"OpenSearch hybrid index already exists: {opensearch_client.index_name}")
+            if setup_results.get("rrf_pipeline"):
+                logger.info("OpenSearch RRF search pipeline created")
         else:
             logger.warning("OpenSearch not healthy, indexing will be skipped")
 
@@ -123,8 +123,7 @@ def fetch_daily_papers(**context):
             run_paper_ingestion_pipeline(
                 target_date=target_date,
                 max_results=None,
-                process_pdfs=True,
-                index_to_opensearch=False,  # Changed: Don't index here, leave it for dedicated task
+                process_pdfs=True,  # Indexing happens in the dedicated index_papers_to_opensearch task
             )
         )
 
@@ -140,6 +139,32 @@ def fetch_daily_papers(**context):
         error_msg = f"Daily paper fetch failed: {str(e)}"
         logger.error(error_msg)
         raise Exception(error_msg)
+
+
+async def _index_papers_hybrid(papers_data: List[Dict[str, Any]]) -> List[Dict[str, int]]:
+    """Chunk, embed, and index papers into the hybrid chunk index.
+
+    The indexing service is created per run (not cached) because its Jina client holds an
+    httpx.AsyncClient bound to this event loop; it is closed when the run finishes.
+    Existing chunks for each paper are deleted first so re-runs do not duplicate chunks.
+
+    :param papers_data: Paper dicts with arxiv_id, title, abstract, raw_text, sections, etc.
+    :returns: Per-paper stats from HybridIndexingService.index_paper
+    """
+    indexing_service = make_hybrid_indexing_service()
+    stats: List[Dict[str, int]] = []
+    try:
+        for paper in papers_data:
+            indexing_service.opensearch_client.delete_paper_chunks(paper["arxiv_id"])
+            paper_stats = await indexing_service.index_paper(paper)
+            stats.append(paper_stats)
+            if paper_stats["chunks_indexed"] > 0 and paper_stats["errors"] == 0:
+                logger.info(f"Indexed paper {paper['arxiv_id']}: {paper_stats['chunks_indexed']} chunks")
+            else:
+                logger.warning(f"Failed to fully index paper {paper['arxiv_id']}: {paper_stats}")
+    finally:
+        await indexing_service.embeddings_client.close()
+    return stats
 
 
 def index_papers_to_opensearch(**context):
@@ -173,10 +198,7 @@ def index_papers_to_opensearch(**context):
             logger.error("OpenSearch is not healthy, skipping indexing")
             return {"status": "failed", "papers_indexed": 0, "message": "OpenSearch cluster not healthy"}
 
-        fetch_results = context["task_instance"].xcom_pull(task_ids="fetch_daily_papers", key="fetch_results")
-
-        indexed_count = 0
-        failed_count = 0
+        papers_data: List[Dict[str, Any]] = []
 
         with database.get_session() as session:
             paper_repo = PaperRepository(session)
@@ -193,45 +215,33 @@ def index_papers_to_opensearch(**context):
 
             logger.info(f"Found {len(papers)} papers from today's run to index")
 
+            # Copy what the indexer needs out of the ORM objects while the session is open
             for paper_row in papers:
-                try:
-                    paper = paper_repo.get_by_id(paper_row.id)
-                    if not paper:
-                        continue
-                    paper_doc = {
+                paper = paper_repo.get_by_id(paper_row.id)
+                if not paper:
+                    continue
+                papers_data.append(
+                    {
+                        "id": str(paper.id),
                         "arxiv_id": paper.arxiv_id,
                         "title": paper.title,
-                        "authors": ", ".join(paper.authors) if isinstance(paper.authors, list) else str(paper.authors),
+                        "authors": paper.authors,
                         "abstract": paper.abstract,
                         "categories": paper.categories,
-                        "pdf_url": paper.pdf_url,
                         "published_date": paper.published_date.isoformat()
                         if hasattr(paper.published_date, "isoformat")
                         else str(paper.published_date),
-                        "raw_text": paper.raw_text
-                        if hasattr(paper, "raw_text") and paper.raw_text
-                        else "",  # Include PDF content
-                        "created_at": paper.created_at.isoformat()
-                        if hasattr(paper.created_at, "isoformat")
-                        else str(paper.created_at),
-                        "updated_at": paper.updated_at.isoformat()
-                        if hasattr(paper.updated_at, "isoformat")
-                        else str(paper.updated_at),
+                        "raw_text": paper.raw_text or "",
+                        "sections": paper.sections,
                     }
+                )
 
-                    # Index the document
-                    success = opensearch_client.index_paper(paper_doc)
+        # Week 4: chunk each paper, embed chunks with Jina, and bulk index them into the hybrid chunk index
+        paper_stats = asyncio.run(_index_papers_hybrid(papers_data))
 
-                    if success:
-                        indexed_count += 1
-                        logger.info(f"Successfully indexed paper: {paper.arxiv_id}")
-                    else:
-                        failed_count += 1
-                        logger.warning(f"Failed to index paper: {paper.arxiv_id}")
-
-                except Exception as e:
-                    failed_count += 1
-                    logger.error(f"Error indexing paper {paper_row.id}: {e}")
+        indexed_count = sum(1 for s in paper_stats if s["chunks_indexed"] > 0 and s["errors"] == 0)
+        failed_count = len(paper_stats) - indexed_count
+        total_chunks = sum(s["chunks_indexed"] for s in paper_stats)
 
         # Get final index stats
         try:
@@ -245,16 +255,18 @@ def index_papers_to_opensearch(**context):
             "papers_indexed": indexed_count,
             "indexing_failures": failed_count,
             "total_documents_in_index": total_docs,
-            "message": f"Indexed {indexed_count} papers, {failed_count} failures",
+            "chunks_indexed": total_chunks,
+            "message": f"Indexed {indexed_count} papers ({total_chunks} chunks), {failed_count} failures",
         }
 
         # Log detailed summary
         logger.info("=" * 60)
-        logger.info("OpenSearch Indexing Summary:")
-        logger.info(f"  Papers found in DB: {len(papers)}")
+        logger.info("OpenSearch Hybrid Indexing Summary:")
+        logger.info(f"  Papers found in DB: {len(papers_data)}")
         logger.info(f"  Papers indexed: {indexed_count}")
+        logger.info(f"  Chunks indexed: {total_chunks}")
         logger.info(f"  Indexing failures: {failed_count}")
-        logger.info(f"  Total docs in index: {total_docs}")
+        logger.info(f"  Total chunks in index: {total_docs}")
         logger.info("=" * 60)
 
         return indexing_results

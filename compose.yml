@@ -16,11 +16,14 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    env_file:
+      - .env
     environment:
+      # Container-specific overrides
+      - OPENSEARCH_HOST=http://opensearch:9200
       - OPENSEARCH__HOST=http://opensearch:9200
       - OLLAMA_HOST=http://ollama:11434
       - POSTGRES_DATABASE_URL=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
-      - ENVIRONMENT=development
     networks:
       - rag-network
 
@@ -74,6 +77,8 @@ services:
     build: ./airflow
     image: agenticrag-airflow
     container_name: rag-airflow
+    env_file:
+      - .env
     environment:
       # Core settings for Airflow 3.0 with SimpleAuth (default)
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
@@ -82,13 +87,15 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
       # Set Airflow home to keep config files organized
       - AIRFLOW_HOME=/opt/airflow/home
-      # Environment variables for DAG tasks
+      # Environment variables for DAG tasks (container hostnames)
       - POSTGRES_DATABASE_URL=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
+      - OPENSEARCH_HOST=http://opensearch:9200
       - OPENSEARCH__HOST=http://opensearch:9200
+      - OLLAMA_HOST=http://ollama:11434
       - PYTHONPATH=/opt/airflow/src
     volumes:
       - ./airflow/dags:/opt/airflow/dags
-      - ./airflow:/opt/airflow/home  # Mount airflow folder as Airflow home
+      - ./airflow:/opt/airflow/home  # Mount airflow folder as Airflow home (includes plugins/)
       - ./src:/opt/airflow/src  # Mount only src folder for DAG access
       - airflow_logs:/opt/airflow/logs
     ports:
@@ -142,7 +149,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./airflow:/airflow
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rag_user -d rag_db"]
       interval: 5s
@@ -162,4 +168,4 @@ volumes:
 
 networks:
   rag-network:
-    driver: bridge
+    driver: bridge 
